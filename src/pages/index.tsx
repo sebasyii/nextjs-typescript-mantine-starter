@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Title } from "@mantine/core";
+import { Title } from "@mantine/core";
 // import React from 'react';
 
 const index = () => {
