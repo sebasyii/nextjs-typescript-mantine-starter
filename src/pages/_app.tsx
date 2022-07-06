@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 import { AppProps } from "next/app";
 
@@ -10,6 +10,10 @@ import {
 
 import { DefaultSeo } from "next-seo";
 import SEO from "../../next-seo.config";
+import { useRouter } from "next/router";
+
+import { pageView } from "@/lib/google-analytics/ga";
+import Script from "next/script";
 
 const App = (props: AppProps) => {
   const { Component, pageProps } = props;
@@ -18,9 +22,43 @@ const App = (props: AppProps) => {
   const toggleColorScheme = (value?: ColorScheme) =>
     setColorScheme(value || (colorScheme === "light" ? "dark" : "light"));
 
+  const router = useRouter();
+  const gaMeasurementId = process.env.GOOGLE_ANALYTICS_ID ?? null;
+
+  useEffect(() => {
+    const handleRouteChange = (url: string) => {
+      pageView(url);
+    };
+
+    router.events.on("routeChangeComplete", handleRouteChange);
+
+    return () => {
+      router.events.off("routeChangeComplete", handleRouteChange);
+    };
+  }, [router.events]);
+
   return (
     <>
       <DefaultSeo {...SEO} />
+
+      {/* Only Activates in production */}
+      {gaMeasurementId && (
+        <>
+          <Script
+            src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`}
+            strategy="afterInteractive"
+          />
+          <Script id="google-analytics" strategy="afterInteractive">
+            {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+
+          gtag('config', '${gaMeasurementId}');
+        `}
+          </Script>
+        </>
+      )}
 
       <ColorSchemeProvider
         colorScheme={colorScheme}
